@@ -6,7 +6,6 @@
 
 由于使用了带保底伪随机算法，可以保证不会有人一直无法被抽到，另外由于b站API限制，暂时只支持显示直播间前100贡献度的用户
 
-
 作者：天才IMBA（双酿）
 
 ## 前置Mod
@@ -23,7 +22,7 @@
 目前为以下Mod提供了额外的适配，如果使用了他们，请把它们放在本Mod之前并重启游戏：
 
 + KillFeed(击杀记录): https://steamcommunity.com/sharedfiles/filedetails/?id=3588412062
-
++ 战地风格动态击杀提示: https://steamcommunity.com/sharedfiles/filedetails/?id=3591589560
 
 ## 配置
 

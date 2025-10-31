@@ -19,7 +19,7 @@ using SodaCraft.Localizations;
 namespace DuckovStreamName
 {
     [HarmonyPatch] // no typeof(...) here to avoid hard reference
-    static class KillFeed_GetCharacterName_OptionalPatch
+    static class KillFeedGetCharacterNameOptionalPatch
     {
         // Only patch if KillFeed.ModBehaviour exists
         static bool Prepare()
@@ -29,6 +29,10 @@ namespace DuckovStreamName
             {
                 Debug.LogWarning(
                     "[DuckovStreamName] Cannot find Mod [KillFeed], put it before this mod if you need it.");
+            }
+            else
+            {
+                Debug.Log("[DuckovStreamName] patch KillFeed.ModBehaviour.GetCharacterName");
             }
 
             return result;
@@ -49,6 +53,76 @@ namespace DuckovStreamName
                 __result = ModBehaviour.GetCharacterName(character);
         }
     }
+    
+    [HarmonyPatch] // no typeof(...) here to avoid hard reference
+    static class BattlefieldTypeKillNoticeOnKillOptionalPatch
+    {
+        private static Type _modType;
+        private static FieldInfo _fieldCachedConfig;
+        private static MethodInfo _updateKillText;
+        
+        // Only patch if BattlefieldTypeKillNotice.ModBehaviour exists
+        static bool Prepare()
+        {
+            bool result = true;
+            _modType = AccessTools.TypeByName("BattlefieldTypeKillNotice.ModBehaviour");
+            if (_modType == null) result = false;
+            else
+            {
+                _fieldCachedConfig = AccessTools.Field(_modType, "_cachedConfig");
+                _updateKillText = AccessTools.Method(_modType, "UpdateKillText");
+            }
+            if (_fieldCachedConfig == null || _updateKillText == null) result = false;
+            if (!result)
+            {
+                Debug.LogWarning(
+                    "[DuckovStreamName] Cannot find Mod [BattlefieldTypeKillNotice], put it before this mod if you need it.");
+            }
+            else
+            {
+                Debug.Log("[DuckovStreamName] patch BattlefieldTypeKillNotice.ModBehaviour.OnKill");
+            }
+
+            return result;
+        }
+
+
+        // Tell Harmony which method to patch when present
+        static MethodBase TargetMethod()
+        {
+            var t = AccessTools.TypeByName("BattlefieldTypeKillNotice.ModBehaviour");
+            return AccessTools.Method(t, "OnKill", new[] { typeof(Health), typeof(DamageInfo) });
+        }
+
+        // Regular postfix
+        static void Postfix(BattlefieldTypeKillNotice.ModBehaviour __instance, Health health, DamageInfo damageInfo)
+        {
+            try
+            {
+                var configInstance = _fieldCachedConfig.GetValue(__instance);
+                if (configInstance == null) return;
+                var showTextField = AccessTools.Field(configInstance.GetType(), "ShowText");
+                if (showTextField == null) return;
+                bool showText = (bool)showTextField.GetValue(configInstance);
+                if (showText)
+                {
+                    CharacterMainControl character = health.TryGetCharacter();
+                    if (character && !character.IsMainCharacter && character.characterPreset != null)
+                    {
+                        _updateKillText.Invoke(__instance, new object[] { ModBehaviour.GetCharacterName(character)});
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+            
+            
+           
+        }
+    }
+    
     
     // Patch the death information
     [HarmonyPatch(typeof(DamageInfo))]
@@ -142,6 +216,19 @@ namespace DuckovStreamName
             {
                 Debug.LogError((object)$"RefreshCharacterIconPostfix错误: {ex}");
             }
+        }
+    }
+    
+    // Patch OnDestroy to prevent memory leak
+    [HarmonyPatch(typeof(CharacterMainControl))]
+    public static class CharacterMainControlPatch
+    {
+        [HarmonyPrefix]
+        [HarmonyPatch("OnDestroy")]
+        public static void OnDestroyPrefix(CharacterMainControl __instance)
+        {
+            Debug.Log($"[DuckovStreamName] {__instance.GetInstanceID()} was destroyed (patched)!");
+            ModBehaviour.UnregisterCharacter(__instance);
         }
     }
 
@@ -484,6 +571,12 @@ namespace DuckovStreamName
             return null;
         }
 
+        public static void UnregisterCharacter(CharacterMainControl character)
+        {
+            int id = character.GetInstanceID();
+            _idUserMap.Remove(id);
+        }
+
         public static string GetCharacterName(CharacterMainControl character)
         {
             try
@@ -504,15 +597,15 @@ namespace DuckovStreamName
 
                 if (user == null)
                 {
-                    return $"[{character.characterPreset.DisplayName}] 当前无观众";
+                    return $"({character.characterPreset.DisplayName}) 当前无观众";
                 }
 
-                return $"[{character.characterPreset.DisplayName}] {user.Name}";
+                return $"({character.characterPreset.DisplayName}) {user.Name}";
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                return $"[{character.characterPreset.DisplayName}] 生成失败";
+                return $"({character.characterPreset.DisplayName}) 生成失败";
             }
         }
     }

@@ -18,6 +18,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="BattlefieldTypeKillNotice">
+            <Private>false</Private>
+            <HintPath>..\..\..\workshop\content\3167020\3591589560\BattlefieldTypeKillNotice.dll</HintPath>
+        </Reference>
         <Reference Include="KillFeed">
             <Private>false</Private>
             <HintPath>..\..\..\workshop\content\3167020\3588412062\KillFeed.dll</HintPath>
@@ -728,6 +732,9 @@
               DestinationFolder="$(ModsDir)"
               SkipUnchangedFiles="true" />
         <Copy SourceFiles="$(ProjectDir)description.md"
+              DestinationFolder="$(ModsDir)"
+              SkipUnchangedFiles="true" />
+        <Copy SourceFiles="$(ProjectDir)changeNotes.md"
               DestinationFolder="$(ModsDir)"
               SkipUnchangedFiles="true" />
     </Target>
