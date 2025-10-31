@@ -727,5 +727,8 @@
         <Copy SourceFiles="$(ProjectDir)info.ini"
               DestinationFolder="$(ModsDir)"
               SkipUnchangedFiles="true" />
+        <Copy SourceFiles="$(ProjectDir)description.md"
+              DestinationFolder="$(ModsDir)"
+              SkipUnchangedFiles="true" />
     </Target>
 </Project>
